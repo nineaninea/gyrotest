@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sensor Diagnostic</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+    background: #0a0a1a; color: #e0e0e0;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 16px;
+  }
+  h1 { font-size: 1.2rem; margin-bottom: 4px; color: #7eb8ff; }
+  .sub { font-size: 0.7rem; color: #666; margin-bottom: 16px; text-align: center; }
+  .btn {
+    border: none; padding: 14px 36px; border-radius: 12px; font-size: 1rem;
+    font-weight: 600; cursor: pointer; color: white; margin-bottom: 16px;
+    background: linear-gradient(135deg, #4a90d9, #357abd);
+  }
+  .section {
+    width: 100%; max-width: 440px; background: #12122a; border-radius: 12px;
+    padding: 14px; border: 1px solid #1e1e40; margin-bottom: 12px;
+  }
+  .section-title { font-size: 0.7rem; color: #7eb8ff; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+  .row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.85rem; }
+  .label { color: #888; }
+  .val { color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 80px; text-align: right; }
+  .val.red { color: #ff6b6b; }
+  .val.green { color: #51cf66; }
+  .val.blue { color: #7eb8ff; }
+  .hint { font-size: 0.72rem; color: #555; margin-top: 8px; line-height: 1.4; border-top: 1px solid #1e1e40; padding-top: 8px; }
+  #status { font-size: 0.78rem; color: #888; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>🔬 Sensor Diagnostic</h1>
+<div class="sub">See raw values to determine axis mapping</div>
+
+<button class="btn" id="permBtn" onclick="requestPermission()">Grant Sensors</button>
+
+<div class="section">
+  <div class="section-title">accelerationIncludingGravity (m/s²)</div>
+  <div class="row"><span class="label">x</span><span class="val red" id="agX">--</span></div>
+  <div class="row"><span class="label">y</span><span class="val green" id="agY">--</span></div>
+  <div class="row"><span class="label">z</span><span class="val blue" id="agZ">--</span></div>
+  <div class="row"><span class="label">|magnitude|</span><span class="val" id="agMag">--</span></div>
+  <div class="hint">
+    📱 Lay phone flat face-up → which axis shows ~9.8?<br>
+    📱 Stand phone up in portrait → which axis shows ~9.8?
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">acceleration (no gravity) (m/s²)</div>
+  <div class="row"><span class="label">x</span><span class="val red" id="aX">--</span></div>
+  <div class="row"><span class="label">y</span><span class="val green" id="aY">--</span></div>
+  <div class="row"><span class="label">z</span><span class="val blue" id="aZ">--</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">rotationRate (°/s)</div>
+  <div class="row"><span class="label">alpha</span><span class="val red" id="rrA">--</span></div>
+  <div class="row"><span class="label">beta</span><span class="val green" id="rrB">--</span></div>
+  <div class="row"><span class="label">gamma</span><span class="val blue" id="rrG">--</span></div>
+  <div class="hint">
+    📱 Lay phone flat, spin it on table → which value changes?<br>
+    📱 Lay phone flat, tilt forward/back → which value changes?<br>
+    📱 Lay phone flat, tilt left/right → which value changes?
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">DeviceOrientation (°)</div>
+  <div class="row"><span class="label">alpha</span><span class="val red" id="oA">--</span></div>
+  <div class="row"><span class="label">beta</span><span class="val green" id="oB">--</span></div>
+  <div class="row"><span class="label">gamma</span><span class="val blue" id="oG">--</span></div>
+</div>
+
+<div id="status">Tap button to start</div>
+
+<script>
+function handleMotion(e) {
+  const ag = e.accelerationIncludingGravity || {};
+  document.getElementById('agX').textContent = (ag.x ?? 0).toFixed(3);
+  document.getElementById('agY').textContent = (ag.y ?? 0).toFixed(3);
+  document.getElementById('agZ').textContent = (ag.z ?? 0).toFixed(3);
+  const m = Math.sqrt((ag.x||0)**2 + (ag.y||0)**2 + (ag.z||0)**2);
+  document.getElementById('agMag').textContent = m.toFixed(3);
+
+  const a = e.acceleration || {};
+  document.getElementById('aX').textContent = (a.x ?? 0).toFixed(3);
+  document.getElementById('aY').textContent = (a.y ?? 0).toFixed(3);
+  document.getElementById('aZ').textContent = (a.z ?? 0).toFixed(3);
+
+  const rr = e.rotationRate || {};
+  document.getElementById('rrA').textContent = (rr.alpha ?? 0).toFixed(2);
+  document.getElementById('rrB').textContent = (rr.beta ?? 0).toFixed(2);
+  document.getElementById('rrG').textContent = (rr.gamma ?? 0).toFixed(2);
+}
+
+function handleOrientation(e) {
+  document.getElementById('oA').textContent = (e.alpha ?? 0).toFixed(2);
+  document.getElementById('oB').textContent = (e.beta ?? 0).toFixed(2);
+  document.getElementById('oG').textContent = (e.gamma ?? 0).toFixed(2);
+}
+
+function requestPermission() {
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    Promise.all([
+      DeviceMotionEvent.requestPermission(),
+      DeviceOrientationEvent.requestPermission()
+    ]).then(([ms, os]) => {
+      if (ms === 'granted' && os === 'granted') start();
+      else document.getElementById('status').textContent = '❌ Denied';
+    }).catch(err => { document.getElementById('status').textContent = '❌ ' + err.message; });
+  } else { start(); }
+}
+
+function start() {
+  window.addEventListener('devicemotion', handleMotion, true);
+  window.addEventListener('deviceorientation', handleOrientation, true);
+  document.getElementById('permBtn').disabled = true;
+  document.getElementById('permBtn').textContent = '✅ Active';
+  document.getElementById('status').textContent = 'Sensors active. Move your phone and observe values.';
+}
+</script>
+</body>
+</html>
