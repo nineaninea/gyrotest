@@ -7,125 +7,313 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: #0a0a1a; color: #e0e0e0;
     min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-    padding: 16px;
+    padding: 12px; overflow-x: hidden;
   }
   h1 { font-size: 1.2rem; margin-bottom: 4px; color: #7eb8ff; }
-  .sub { font-size: 0.7rem; color: #666; margin-bottom: 16px; text-align: center; }
+  .sub { font-size: 0.7rem; color: #666; margin-bottom: 12px; text-align: center; }
   .btn {
     border: none; padding: 14px 36px; border-radius: 12px; font-size: 1rem;
-    font-weight: 600; cursor: pointer; color: white; margin-bottom: 16px;
+    font-weight: 600; cursor: pointer; color: white; margin-bottom: 14px;
     background: linear-gradient(135deg, #4a90d9, #357abd);
   }
+  .btn:disabled { opacity: 0.4; }
+
   .section {
-    width: 100%; max-width: 440px; background: #12122a; border-radius: 12px;
-    padding: 14px; border: 1px solid #1e1e40; margin-bottom: 12px;
+    width: 100%; max-width: 460px; background: #12122a; border-radius: 12px;
+    padding: 12px; border: 1px solid #1e1e40; margin-bottom: 10px;
   }
-  .section-title { font-size: 0.7rem; color: #7eb8ff; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-  .row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.85rem; }
-  .label { color: #888; }
-  .val { color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 80px; text-align: right; }
-  .val.red { color: #ff6b6b; }
-  .val.green { color: #51cf66; }
-  .val.blue { color: #7eb8ff; }
-  .hint { font-size: 0.72rem; color: #555; margin-top: 8px; line-height: 1.4; border-top: 1px solid #1e1e40; padding-top: 8px; }
-  #status { font-size: 0.78rem; color: #888; margin-top: 8px; }
+  .section-title {
+    font-size: 0.68rem; color: #7eb8ff; text-transform: uppercase;
+    margin-bottom: 8px; letter-spacing: 0.8px;
+  }
+
+  .chart-row {
+    display: flex; align-items: center; margin-bottom: 6px; gap: 8px;
+  }
+  .chart-row:last-child { margin-bottom: 0; }
+  .chart-label {
+    font-size: 0.75rem; font-weight: 700; min-width: 42px; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .chart-canvas-wrap {
+    flex: 1; height: 50px; background: #0a0a1a; border-radius: 6px;
+    overflow: hidden; position: relative;
+  }
+  .chart-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+  .chart-val {
+    font-size: 0.72rem; font-weight: 600; min-width: 58px; text-align: right;
+    font-variant-numeric: tabular-nums; color: #aaa;
+  }
+
+  .hint {
+    font-size: 0.68rem; color: #555; margin-top: 6px; line-height: 1.4;
+    border-top: 1px solid #1e1e40; padding-top: 6px;
+  }
+
+  #status { font-size: 0.75rem; color: #888; margin-top: 6px; text-align: center; }
 </style>
 </head>
 <body>
 
 <h1>🔬 Sensor Diagnostic</h1>
-<div class="sub">See raw values to determine axis mapping</div>
+<div class="sub">ECG-style live charts for all sensor axes</div>
 
 <button class="btn" id="permBtn" onclick="requestPermission()">Grant Sensors</button>
 
-<div class="section">
-  <div class="section-title">accelerationIncludingGravity (m/s²)</div>
-  <div class="row"><span class="label">x</span><span class="val red" id="agX">--</span></div>
-  <div class="row"><span class="label">y</span><span class="val green" id="agY">--</span></div>
-  <div class="row"><span class="label">z</span><span class="val blue" id="agZ">--</span></div>
-  <div class="row"><span class="label">|magnitude|</span><span class="val" id="agMag">--</span></div>
-  <div class="hint">
-    📱 Lay phone flat face-up → which axis shows ~9.8?<br>
-    📱 Stand phone up in portrait → which axis shows ~9.8?
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">acceleration (no gravity) (m/s²)</div>
-  <div class="row"><span class="label">x</span><span class="val red" id="aX">--</span></div>
-  <div class="row"><span class="label">y</span><span class="val green" id="aY">--</span></div>
-  <div class="row"><span class="label">z</span><span class="val blue" id="aZ">--</span></div>
-</div>
-
-<div class="section">
-  <div class="section-title">rotationRate (°/s)</div>
-  <div class="row"><span class="label">alpha</span><span class="val red" id="rrA">--</span></div>
-  <div class="row"><span class="label">beta</span><span class="val green" id="rrB">--</span></div>
-  <div class="row"><span class="label">gamma</span><span class="val blue" id="rrG">--</span></div>
-  <div class="hint">
-    📱 Lay phone flat, spin it on table → which value changes?<br>
-    📱 Lay phone flat, tilt forward/back → which value changes?<br>
-    📱 Lay phone flat, tilt left/right → which value changes?
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">DeviceOrientation (°)</div>
-  <div class="row"><span class="label">alpha</span><span class="val red" id="oA">--</span></div>
-  <div class="row"><span class="label">beta</span><span class="val green" id="oB">--</span></div>
-  <div class="row"><span class="label">gamma</span><span class="val blue" id="oG">--</span></div>
-</div>
+<div id="sections"></div>
 
 <div id="status">Tap button to start</div>
 
 <script>
+// ============ CONFIG ============
+const HISTORY = 150;       // number of samples to show
+const SAMPLE_MS = 50;      // sample every 50ms = 20fps
+const COLORS = {
+  red:   '#ff6b6b',
+  green: '#51cf66',
+  blue:  '#7eb8ff',
+};
+
+// ============ CHART DEFINITIONS ============
+const groups = [
+  {
+    title: 'accelerationIncludingGravity (m/s²)',
+    id: 'ag',
+    axes: [
+      { key: 'ag_x', label: 'x', color: COLORS.red },
+      { key: 'ag_y', label: 'y', color: COLORS.green },
+      { key: 'ag_z', label: 'z', color: COLORS.blue },
+    ],
+    yRange: 15,
+    hint: '📱 Flat face-up → which axis ≈ 9.8?   Spin on table → should stay steady',
+  },
+  {
+    title: 'acceleration (no gravity) (m/s²)',
+    id: 'a',
+    axes: [
+      { key: 'a_x', label: 'x', color: COLORS.red },
+      { key: 'a_y', label: 'y', color: COLORS.green },
+      { key: 'a_z', label: 'z', color: COLORS.blue },
+    ],
+    yRange: 5,
+    hint: '📱 Should be ~0 when still. Spikes when you move.',
+  },
+  {
+    title: 'rotationRate (°/s)',
+    id: 'rr',
+    axes: [
+      { key: 'rr_a', label: 'alpha', color: COLORS.red },
+      { key: 'rr_b', label: 'beta', color: COLORS.green },
+      { key: 'rr_g', label: 'gamma', color: COLORS.blue },
+    ],
+    yRange: 100,
+    hint: '📱 Flat + spin on table → which spikes?   Flat + tilt fwd/back → which spikes?',
+  },
+  {
+    title: 'DeviceOrientation (°)',
+    id: 'ori',
+    axes: [
+      { key: 'ori_a', label: 'alpha', color: COLORS.red },
+      { key: 'ori_b', label: 'beta', color: COLORS.green },
+      { key: 'ori_g', label: 'gamma', color: COLORS.blue },
+    ],
+    yRange: 180,
+    hint: '📱 alpha: compass heading   beta: front/back tilt   gamma: left/right tilt',
+  },
+];
+
+// ============ STATE ============
+const latest = {};   // key → current value
+const buffers = {};  // key → circular array of values
+const canvases = {}; // key → { canvas, ctx }
+const dpr = window.devicePixelRatio || 1;
+
+// Init buffers
+for (const g of groups) {
+  for (const ax of g.axes) {
+    latest[ax.key] = 0;
+    buffers[ax.key] = new Array(HISTORY).fill(0);
+  }
+}
+
+// ============ BUILD DOM ============
+function buildUI() {
+  const container = document.getElementById('sections');
+  container.innerHTML = '';
+
+  for (const g of groups) {
+    const sec = document.createElement('div');
+    sec.className = 'section';
+
+    let html = `<div class="section-title">${g.title}</div>`;
+
+    for (const ax of g.axes) {
+      html += `
+        <div class="chart-row">
+          <div class="chart-label" style="color:${ax.color}">${ax.label}</div>
+          <div class="chart-canvas-wrap"><canvas id="cv_${ax.key}"></canvas></div>
+          <div class="chart-val" id="val_${ax.key}">0.00</div>
+        </div>`;
+    }
+
+    html += `<div class="hint">${g.hint}</div>`;
+    sec.innerHTML = html;
+    container.appendChild(sec);
+  }
+
+  // Setup canvases
+  for (const g of groups) {
+    for (const ax of g.axes) {
+      const cv = document.getElementById('cv_' + ax.key);
+      const rect = cv.parentElement.getBoundingClientRect();
+      cv.width = rect.width * dpr;
+      cv.height = rect.height * dpr;
+      const c = cv.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvases[ax.key] = { canvas: cv, ctx: c, w: rect.width, h: rect.height };
+    }
+  }
+}
+
+// ============ DRAWING ============
+function drawChart(key, color, yRange) {
+  const { ctx, w, h } = canvases[key];
+  const buf = buffers[key];
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Zero line
+  const zeroY = h / 2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(w, zeroY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Auto-scale: use configured range or expand if data exceeds
+  let maxAbs = yRange;
+  for (const v of buf) { const a = Math.abs(v); if (a > maxAbs) maxAbs = a; }
+  const range = maxAbs * 1.1;
+
+  function yPos(v) { return zeroY - (v / range) * (h / 2 - 4); }
+
+  // Fill
+  ctx.beginPath();
+  const step = w / (HISTORY - 1);
+  ctx.moveTo(0, zeroY);
+  for (let i = 0; i < buf.length; i++) {
+    ctx.lineTo(i * step, yPos(buf[i]));
+  }
+  ctx.lineTo((buf.length - 1) * step, zeroY);
+  ctx.closePath();
+  ctx.fillStyle = color.replace(')', ',0.08)').replace('rgb', 'rgba');
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  for (let i = 0; i < buf.length; i++) {
+    const x = i * step, y = yPos(buf[i]);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Dot at end
+  const lastX = (buf.length - 1) * step;
+  const lastY = yPos(buf[buf.length - 1]);
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(lastX, lastY, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Y range labels
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.font = '8px -apple-system,sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('+' + range.toFixed(0), 2, 2);
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('-' + range.toFixed(0), 2, h - 2);
+}
+
+function drawAll() {
+  for (const g of groups) {
+    for (const ax of g.axes) {
+      drawChart(ax.key, ax.color, g.yRange);
+    }
+  }
+}
+
+// ============ SAMPLING ============
+let sampleTimer = null;
+
+function sample() {
+  for (const g of groups) {
+    for (const ax of g.axes) {
+      buffers[ax.key].push(latest[ax.key]);
+      if (buffers[ax.key].length > HISTORY) buffers[ax.key].shift();
+
+      const el = document.getElementById('val_' + ax.key);
+      if (el) el.textContent = latest[ax.key].toFixed(2);
+    }
+  }
+  drawAll();
+}
+
+// ============ SENSORS ============
 function handleMotion(e) {
   const ag = e.accelerationIncludingGravity || {};
-  document.getElementById('agX').textContent = (ag.x ?? 0).toFixed(3);
-  document.getElementById('agY').textContent = (ag.y ?? 0).toFixed(3);
-  document.getElementById('agZ').textContent = (ag.z ?? 0).toFixed(3);
-  const m = Math.sqrt((ag.x||0)**2 + (ag.y||0)**2 + (ag.z||0)**2);
-  document.getElementById('agMag').textContent = m.toFixed(3);
+  latest.ag_x = ag.x || 0;
+  latest.ag_y = ag.y || 0;
+  latest.ag_z = ag.z || 0;
 
   const a = e.acceleration || {};
-  document.getElementById('aX').textContent = (a.x ?? 0).toFixed(3);
-  document.getElementById('aY').textContent = (a.y ?? 0).toFixed(3);
-  document.getElementById('aZ').textContent = (a.z ?? 0).toFixed(3);
+  latest.a_x = a.x || 0;
+  latest.a_y = a.y || 0;
+  latest.a_z = a.z || 0;
 
   const rr = e.rotationRate || {};
-  document.getElementById('rrA').textContent = (rr.alpha ?? 0).toFixed(2);
-  document.getElementById('rrB').textContent = (rr.beta ?? 0).toFixed(2);
-  document.getElementById('rrG').textContent = (rr.gamma ?? 0).toFixed(2);
+  latest.rr_a = rr.alpha || 0;
+  latest.rr_b = rr.beta || 0;
+  latest.rr_g = rr.gamma || 0;
 }
 
 function handleOrientation(e) {
-  document.getElementById('oA').textContent = (e.alpha ?? 0).toFixed(2);
-  document.getElementById('oB').textContent = (e.beta ?? 0).toFixed(2);
-  document.getElementById('oG').textContent = (e.gamma ?? 0).toFixed(2);
+  latest.ori_a = e.alpha || 0;
+  latest.ori_b = e.beta || 0;
+  latest.ori_g = e.gamma || 0;
 }
 
+// ============ PERMISSION ============
 function requestPermission() {
   if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
     Promise.all([
       DeviceMotionEvent.requestPermission(),
       DeviceOrientationEvent.requestPermission()
     ]).then(([ms, os]) => {
-      if (ms === 'granted' && os === 'granted') start();
+      if (ms === 'granted' && os === 'granted') startAll();
       else document.getElementById('status').textContent = '❌ Denied';
     }).catch(err => { document.getElementById('status').textContent = '❌ ' + err.message; });
-  } else { start(); }
+  } else { startAll(); }
 }
 
-function start() {
+function startAll() {
   window.addEventListener('devicemotion', handleMotion, true);
   window.addEventListener('deviceorientation', handleOrientation, true);
   document.getElementById('permBtn').disabled = true;
   document.getElementById('permBtn').textContent = '✅ Active';
-  document.getElementById('status').textContent = 'Sensors active. Move your phone and observe values.';
+  document.getElementById('status').textContent = 'Sensors active. Move your phone and observe the charts.';
+
+  buildUI();
+  sampleTimer = setInterval(sample, SAMPLE_MS);
 }
+
+// Resize
+window.addEventListener('resize', () => {
+  if (sampleTimer) buildUI();
+});
 </script>
 </body>
 </html>
